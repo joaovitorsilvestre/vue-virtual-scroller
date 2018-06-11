@@ -1,20 +1,20 @@
 <template>
   <div
-    v-observe-visibility="handleVisibilityChange"
-    :class="cssClass"
     class="recycle-list"
+    :class="cssClass"
     @scroll.passive="handleScroll"
+    v-observe-visibility="handleVisibilityChange"
   >
     <div
       ref="wrapper"
-      :style="{ height: totalHeight + 'px' }"
       class="item-wrapper"
+      :style="{ height: totalHeight + 'px' }"
     >
       <div
         v-for="view of pool"
         :key="view.nr.id"
-        :style="{ transform: 'translateY(' + view.top + 'px)' }"
         class="item-view"
+        :style="{ transform: 'translateY(' + view.top + 'px)' }"
       >
         <slot
           :item="view.item"
@@ -34,7 +34,7 @@
 
 <script>
 import Scroller from '../mixins/scroller'
-import config from '../config'
+import _ from '../../../lodash'
 
 let uid = 0
 
@@ -60,20 +60,29 @@ export default {
     return {
       pool: [],
       totalHeight: 0,
+      rendering: false
     }
   },
 
   watch: {
-    items () {
-      this.updateVisibleItems(true)
+    items: {
+      handler () {
+        this.updateVisibleItems({
+          checkItem: true,
+        })
+      },
     },
     pageMode () {
       this.applyPageMode()
-      this.updateVisibleItems(false)
+      this.updateVisibleItems({
+        checkItem: false,
+      })
     },
     heights: {
       handler () {
-        this.updateVisibleItems(false)
+        this.updateVisibleItems({
+          checkItem: false,
+        })
       },
       deep: true,
     },
@@ -93,9 +102,16 @@ export default {
   mounted () {
     this.applyPageMode()
     this.$nextTick(() => {
-      this.updateVisibleItems(true)
+      this.updateVisibleItems({
+        checkItem: true,
+      })
       this.$_ready = true
     })
+  },
+
+  updated () {
+    console.log('começando a renderizar')
+    this.rendering = false
   },
 
   methods: {
@@ -115,6 +131,8 @@ export default {
         configurable: false,
         value: nonReactive,
       })
+      this.rendering = true
+      console.log('começando a renderizar')
       pool.push(view)
       return view
     },
@@ -137,21 +155,26 @@ export default {
 
     handleResize () {
       this.$emit('resize')
-      if (this.$_ready) this.updateVisibleItems(false)
+      this.$_ready && this.updateVisibleItems({
+        checkItem: false,
+      })
     },
 
-    handleScroll (event) {
+    handleScroll: (event) => {
+      console.log('debounced', this.updateVisibleItems, this)
       if (!this.$_scrollDirty) {
         this.$_scrollDirty = true
         requestAnimationFrame(() => {
           this.$_scrollDirty = false
-          const { continuous } = this.updateVisibleItems(false)
+          const { continuous } = this.a.methods.updateVisibleItems({
+            checkItem: false,
+          })
 
           // It seems sometimes chrome doesn't fire scroll event :/
           // When non continous scrolling is ending, we force a refresh
           if (!continuous) {
             clearTimeout(this.$_refreshTimout)
-            this.$_refreshTimout = setTimeout(this.handleScroll, 100)
+            this.$_refreshTimout = setTimeout(this.methods.handleScroll, 100)
           }
         })
       }
@@ -161,12 +184,14 @@ export default {
       if (this.$_ready && (isVisible || entry.boundingClientRect.width !== 0 || entry.boundingClientRect.height !== 0)) {
         this.$emit('visible')
         requestAnimationFrame(() => {
-          this.updateVisibleItems(false)
+          this.updateVisibleItems({
+            checkItem: false,
+          })
         })
       }
     },
 
-    updateVisibleItems (checkItem) {
+    updateVisibleItems ({ checkItem }) {
       const scroll = this.getScroll()
       const buffer = parseInt(this.buffer)
       scroll.top -= buffer
@@ -234,10 +259,6 @@ export default {
         }
       }
 
-      if (endIndex - startIndex > config.itemsLimit) {
-        this.itemsLimitError()
-      }
-
       this.totalHeight = totalHeight
 
       let view
@@ -260,11 +281,9 @@ export default {
           view = pool[i]
           if (view.nr.used) {
             // Update view item index
-            if (checkItem) {
-              view.nr.index = items.findIndex(
-                item => keyField ? item[keyField] === view.item[keyField] : item === view.item
-              )
-            }
+            if (checkItem) view.nr.index = items.findIndex(
+              item => keyField ? item[keyField] == view.item[keyField] : item === view.item
+            )
 
             // Check if index is still in visible range
             if (
@@ -332,7 +351,7 @@ export default {
             v++
           }
           views.set(key, view)
-        } else {
+        } else  {
           view.nr.used = true
         }
 

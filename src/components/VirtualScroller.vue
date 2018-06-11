@@ -1,10 +1,10 @@
 <template>
   <component
-    v-observe-visibility="handleVisibilityChange"
     :is="mainTag"
-    :class="cssClass"
     class="virtual-scroller"
+    :class="cssClass"
     @scroll.passive="handleScroll"
+    v-observe-visibility="handleVisibilityChange"
   >
     <slot
       name="before-container"
@@ -12,9 +12,9 @@
     <component
       ref="itemContainer"
       :is="containerTag"
+      class="item-container"
       :class="containerClass"
       :style="itemContainerStyle"
-      class="item-container"
     >
       <slot
         name="before-content"
@@ -22,27 +22,27 @@
       <component
         ref="items"
         :is="contentTag"
+        class="items"
         :class="contentClass"
         :style="itemsStyle"
-        class="items"
       >
         <template v-if="renderers">
           <component
+            class="item"
             v-for="(item, index) in visibleItems"
             :key="keysEnabled && item[keyField] || undefined"
             :is="renderers[item[typeField]]"
             :item="item"
             :item-index="$_startIndex + index"
-            class="item"
           />
         </template>
         <template v-else>
           <slot
+            class="item"
             v-for="(item, index) in visibleItems"
             :item="item"
             :item-index="$_startIndex + index"
             :item-key="keysEnabled && item[keyField] || undefined"
-            class="item"
           />
         </template>
       </component>
@@ -59,10 +59,9 @@
 
 <script>
 import Scroller from '../mixins/scroller'
-import config from '../config'
 
 export default {
-  name: 'VirtualScroller',
+  name: 'virtual-scroller',
 
   mixins: [
     Scroller,
@@ -70,7 +69,6 @@ export default {
 
   props: {
     renderers: {
-      type: Object,
       default: null,
     },
     keyField: {
@@ -86,7 +84,6 @@ export default {
       default: 'div',
     },
     containerClass: {
-      type: [String, Array, Object],
       default: null,
     },
     contentTag: {
@@ -94,7 +91,6 @@ export default {
       default: 'div',
     },
     contentClass: {
-      type: [String, Array, Object],
       default: null,
     },
     poolSize: {
@@ -113,6 +109,7 @@ export default {
       itemContainerStyle: null,
       itemsStyle: null,
       keysEnabled: true,
+      focusedIndex: null
     }
   },
 
@@ -153,6 +150,15 @@ export default {
     }
   },
 
+  updated () {
+    if (this.focusedIndex) {
+      if (document.activeElement.dataset.index !== this.focusedIndex) {
+        const shouldBeFocused = Array.from(this.$refs.items.children).find(i => i.dataset.scrollIndex === this.focusedIndex)
+        shouldBeFocused.focus()
+      }
+    }
+  } ,
+
   mounted () {
     this.applyPageMode()
     this.$nextTick(() => {
@@ -165,6 +171,8 @@ export default {
     updateVisibleItems (force = false) {
       if (!this.$_updateDirty) {
         this.$_updateDirty = true
+        this.focusedIndex = document.activeElement.dataset.scrollIndex // str
+
         this.$nextTick(() => {
           this.$_updateDirty = false
 
@@ -239,10 +247,6 @@ export default {
               containerHeight = l * itemHeight
             }
 
-            if (endIndex - startIndex > config.itemsLimit) {
-              this.itemsLimitError()
-            }
-
             if (
               force ||
               this.$_startIndex !== startIndex ||
@@ -280,6 +284,7 @@ export default {
               this.$_height = containerHeight
             }
           }
+          console.log(this.focusedIndex)
         })
       }
     },
