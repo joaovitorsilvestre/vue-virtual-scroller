@@ -110,7 +110,6 @@ export default {
   },
 
   updated () {
-    console.log('começando a renderizar')
     this.rendering = false
   },
 
@@ -132,7 +131,6 @@ export default {
         value: nonReactive,
       })
       this.rendering = true
-      console.log('começando a renderizar')
       pool.push(view)
       return view
     },
@@ -161,7 +159,6 @@ export default {
     },
 
     handleScroll: (event) => {
-      console.log('debounced', this.updateVisibleItems, this)
       if (!this.$_scrollDirty) {
         this.$_scrollDirty = true
         requestAnimationFrame(() => {
