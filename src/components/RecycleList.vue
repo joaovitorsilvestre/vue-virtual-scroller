@@ -11,7 +11,7 @@
       :style="{ height: totalHeight + 'px' }"
     >
       <div
-        v-for="view of pool"
+        v-for="(view, poolIndex) of pool"
         :key="view.nr.id"
         class="item-view"
         :style="{ transform: 'translateY(' + view.top + 'px)' }"
@@ -20,6 +20,7 @@
           :item="view.item"
           :index="view.nr.index"
           :active="view.nr.used"
+          :poolIndex="poolIndex"
         />
       </div>
     </div>
@@ -34,7 +35,6 @@
 
 <script>
 import Scroller from '../mixins/scroller'
-import _ from '../../../lodash'
 
 let uid = 0
 
