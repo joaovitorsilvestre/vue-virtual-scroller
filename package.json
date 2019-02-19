@@ -63,6 +63,7 @@
   },
   "dependencies": {
     "scrollparent": "^2.0.1",
+    "vue": "^2.6.6",
     "vue-observe-visibility": "^0.4.1",
     "vue-resize": "^0.4.4"
   },

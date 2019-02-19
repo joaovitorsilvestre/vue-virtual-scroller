@@ -161,7 +161,6 @@ export default {
     },
 
     handleScroll: (event) => {
-      console.log('debounced', this.updateVisibleItems, this)
       if (!this.$_scrollDirty) {
         this.$_scrollDirty = true
         requestAnimationFrame(() => {
